@@ -2,7 +2,7 @@ const locketRouter = require("./locket.route.js");
 
 module.exports = (app) => {
   app.get("/", (req, res) => {
-    res.json({ message: "🚀 Locket Dio API (Vercel-lite) is running!" });
+    res.json({ message: "🚀 Locket Minh API (Vercel-lite) is running!" });
   });
 
   const healthCheck = (req, res) => {
