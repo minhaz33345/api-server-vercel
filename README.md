@@ -1,4 +1,4 @@
-# Locket Dio API — bản Vercel-lite
+# Locket Minh API — bản Vercel-lite
 
 Bản rút gọn của `apps/self-hosted/api`, đóng gói lại để deploy serverless lên
 **Vercel**. Chỉ chứa đúng phạm vi được yêu cầu: **auth, friend, upload ảnh,
