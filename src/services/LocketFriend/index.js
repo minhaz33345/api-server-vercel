@@ -245,6 +245,8 @@ const getUserByUsername = async (idToken, username) => {
       profile_picture_url: result.profile_picture_url,
       badge:               result.badge || null,
       celebrity:           result.celebrity || false,
+      celebrity_data:      result.celebrity_data || null,
+      friendship_status:   result.friendship_status || null,
     };
   } catch (error) {
     console.error("❌ getUserByUsername:", error.response?.data || error.message);
