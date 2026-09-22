@@ -1,4 +1,5 @@
 const locketRouter = require("./locket.route.js");
+const adminRouter = require("./admin.route.js");
 
 module.exports = (app) => {
   app.get("/", (req, res) => {
@@ -12,4 +13,5 @@ module.exports = (app) => {
   app.post("/health", healthCheck);
 
   app.use("/locket", locketRouter);
+  app.use("/admin", adminRouter);
 };
