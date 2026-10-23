@@ -12,6 +12,21 @@ xem moment**.
 | User | `POST /locket/getInfoUser`, `POST /locket/getStreakInfo`, `POST /locket/updateProfileInfo` (avatar) |
 | Friend | `getAllFriendsV2`, `getIncomingFriendRequests(V2)`, `getOutgoingFriendRequests(V2)`, `searchByUsername`, `searchByInviteToken`, `getUserByUsername`, `fetchUserV2`, `sendFriendRequest(V2)`, `sendCelebrityRequestV2`, `acceptFriendRequest`, `deleteFriendRequest` |
 | Moment (ảnh) | `POST /locket/postMomentV2` (chỉ `mediaInfo.type: "image"`), `getMomentV2`, `getInfoMomentV2`, `countEntries` |
+| AI Filter | `GET /locket/filterCatalog` (public, danh mục filter), `GET /locket/getFilters`, `POST /locket/generateFilter` (multipart: `image` + `prompt`) |
+
+### Về AI Filter trên serverless (lưu ý quan trọng)
+
+`generateFilter` = upload ảnh gốc lên Firebase Storage + gọi `generateFilteredImage`
+thật của Locket — tổng thời gian có thể vượt quá giới hạn mặc định 10s của
+Vercel. `vercel.json` đã set `maxDuration: 60`, nhưng **plan Hobby (free) của
+Vercel giới hạn cứng ở 10s bất kể set gì trong config — cần plan Pro trở lên**
+để `maxDuration` > 10s thật sự có hiệu lực. Nếu đang dùng Hobby và gặp lỗi
+timeout/504, đây là nguyên nhân, không phải bug.
+
+`getFilterCatalog.js` cache catalog 5 phút trong biến module-scope — trên
+serverless, cache này **không sống sót qua cold start** (mỗi cold start là
+1 instance mới), nên hiệu quả cache thấp hơn hẳn so với server chạy liên tục.
+Không ảnh hưởng tính đúng, chỉ là gọi `data.locket-dio.com` thường xuyên hơn.
 
 ## Đã bỏ (và lý do không đưa lên Vercel được)
 

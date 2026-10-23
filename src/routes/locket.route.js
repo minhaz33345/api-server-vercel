@@ -5,6 +5,7 @@ const locketController = require("../controllers/locket.controller.js");
 const { verifyIdToken } = require("../middlewares/verifyToken.js");
 const { checkLoginAllowed } = require("../middlewares/checkLoginAllowed.js");
 const uploadAvatarImage = require("../middlewares/avatar-upload.middleware.js");
+const uploadFilterInputImage = require("../middlewares/filter-input-upload.middleware.js");
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 router.post("/login", checkLoginAllowed, locketController.login);
@@ -36,6 +37,16 @@ router.post("/sendFriendRequestV2", verifyIdToken, locketController.sendFriendRe
 router.post("/sendCelebrityRequestV2", verifyIdToken, locketController.sendCelebrityRequest);
 router.post("/acceptFriendRequest", verifyIdToken, locketController.acceptFriendRequest);
 router.post("/deleteFriendRequest", verifyIdToken, locketController.deleteFriendRequest);
+
+// ── AI Filter: chọn filter + chụp ảnh ─────────────────────────────────────────
+router.get("/filterCatalog", locketController.filterCatalog); // public, proxy né CORS
+router.get("/getFilters", verifyIdToken, locketController.listFilters);
+router.post(
+  "/generateFilter",
+  verifyIdToken,
+  uploadFilterInputImage,
+  locketController.generateFilter
+);
 
 // ── Moment (ảnh) ─────────────────────────────────────────────────────────────
 // postMomentV2: body { mediaInfo: { type: "image", url, name, size }, options/optionsData }

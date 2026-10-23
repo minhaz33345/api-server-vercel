@@ -3,6 +3,7 @@ const {
   authServices,
   friendServices,
   processServices,
+  filterServices,
 } = require("../services");
 const { formatFileSize } = require("../utils/formatFileSize");
 const { logWarning, logTable, logLoading, logInfo } = require("../utils/logEventUtils");
@@ -360,6 +361,60 @@ class LocketController {
       const total = await countEntriesService(idToken, localId);
       return res.status(200).json({ success: true, data: { userId: localId, count: total } });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  // ── AI Filter: chọn filter + chụp ảnh ───────────────────────────────────
+  // (port nguyên từ apps/self-hosted/api — xem commit "feat: AI camera filter")
+
+  async filterCatalog(req, res, next) {
+    try {
+      const categories = await filterServices.getFilterCatalog();
+      return res.status(200).json({ success: true, data: categories });
+    } catch (error) {
+      logWarning("filterCatalog", error.message);
+      next(error);
+    }
+  }
+
+  async listFilters(req, res, next) {
+    try {
+      const { idToken } = req.user;
+      const data = await filterServices.getFilters({ idToken });
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      logWarning("listFilters", error.message);
+      next(error);
+    }
+  }
+
+  async generateFilter(req, res, next) {
+    const CALLER = "generateFilter";
+    try {
+      const { idToken, localId } = req.user;
+      const { prompt } = req.body;
+      const file = req.file;
+
+      if (!file) return res.status(400).json({ error: "Thiếu ảnh (field 'image')" });
+      if (!prompt) return res.status(400).json({ error: "Thiếu prompt filter" });
+
+      logTable(CALLER, {
+        localId,
+        promptPreview: prompt.slice(0, 60),
+        imageSize: formatFileSize(file.size),
+      });
+
+      const result = await filterServices.generateFilteredImage({
+        userId: localId,
+        idToken,
+        imageBuffer: file.buffer,
+        prompt,
+      });
+
+      return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      logWarning(CALLER, error.message);
       next(error);
     }
   }
