@@ -13,7 +13,13 @@ const { uploadFilterOutput } = require("./uploadFilterOutput");
 //   3. Upload buffer đó lên Firebase Storage (bucket locket-filters/filter_outputs/)
 //      y như ảnh thường -> có URL để FE hiển thị / gửi moment
 const KIRA_API_URL = "https://kiraai.vn/api/v1/images/generations";
-const KIRA_MODEL = "kira-3.0-image";
+// kira-3.0-image là model preview (proxy qua Gemini 3.1 flash image preview
+// bên Google) — từng gặp lỗi "Publisher model ... was not found or your
+// project does not have access to it" do key/dự án Kira chưa có quyền truy
+// cập model preview đó. kira-2.0-image là bản Kira ghi là "ổn định lâu dài",
+// dùng làm mặc định; vẫn thử 3.0 trước vì nhanh hơn, lỗi thì fallback tự động.
+const KIRA_MODEL_PRIMARY = "kira-3.0-image";
+const KIRA_MODEL_FALLBACK = "kira-2.0-image";
 
 /**
  * Sinh ảnh filter bằng Kira AI (image-to-image) từ 1 ảnh gốc + prompt.
@@ -46,27 +52,41 @@ const generateFilteredImage = async ({
     const apiKey = process.env.KIRA_API_KEY;
     if (!apiKey) throw new Error("Thiếu KIRA_API_KEY trong biến môi trường");
 
-    const response = await axios.post(
-      KIRA_API_URL,
-      {
-        model: KIRA_MODEL,
-        prompt,
-        aspect_ratio: aspectRatio,
-        reference_images: [
-          {
-            mime_type: "image/jpeg",
-            data: imageBuffer.toString("base64"),
-          },
-        ],
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+    const callKira = (model) =>
+      axios.post(
+        KIRA_API_URL,
+        {
+          model,
+          prompt,
+          aspect_ratio: aspectRatio,
+          reference_images: [
+            {
+              mime_type: "image/jpeg",
+              data: imageBuffer.toString("base64"),
+            },
+          ],
         },
-        timeout: 45000,
-      }
-    );
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          timeout: 45000,
+        }
+      );
+
+    let response;
+    try {
+      response = await callKira(KIRA_MODEL_PRIMARY);
+    } catch (primaryError) {
+      logError(
+        "generateFilteredImage(kira)",
+        `${KIRA_MODEL_PRIMARY} lỗi, fallback sang ${KIRA_MODEL_FALLBACK}: ${
+          primaryError.response?.data?.error?.message || primaryError.message
+        }`
+      );
+      response = await callKira(KIRA_MODEL_FALLBACK);
+    }
 
     const b64 = response.data?.data?.[0]?.b64_json;
     if (!b64) throw new Error("Kira AI không trả về ảnh");
