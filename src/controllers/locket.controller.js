@@ -393,7 +393,7 @@ class LocketController {
     const CALLER = "generateFilter";
     try {
       const { idToken, localId } = req.user;
-      const { prompt } = req.body;
+      const { prompt, filterType, filterLabel, aspectRatio } = req.body;
       const file = req.file;
 
       if (!file) return res.status(400).json({ error: "Thiếu ảnh (field 'image')" });
@@ -403,6 +403,7 @@ class LocketController {
         localId,
         promptPreview: prompt.slice(0, 60),
         imageSize: formatFileSize(file.size),
+        filterType,
       });
 
       const result = await filterServices.generateFilteredImage({
@@ -410,6 +411,9 @@ class LocketController {
         idToken,
         imageBuffer: file.buffer,
         prompt,
+        aspectRatio,
+        filterType,
+        filterLabel,
       });
 
       return res.status(200).json({ success: true, data: result });
